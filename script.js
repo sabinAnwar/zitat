@@ -1,4 +1,4 @@
-// Database of French proverbs with translations
+// Database of French proverbs with translations and categories
 const proverbs = [
     {
         french: "L'habit ne fait pas le moine.",
@@ -6,6 +6,12 @@ const proverbs = [
             en: "The habit does not make the monk.",
             de: "Die Kleidung macht nicht den Mönch.",
             ar: "اللباس لا يصنع الراهب"
+        },
+        category: "wisdom",
+        meanings: {
+            en: "Appearances can be deceiving. Don't judge people by their outward appearance.",
+            de: "Der Schein trügt. Beurteile Menschen nicht nach ihrem äußeren Erscheinungsbild.",
+            ar: "المظاهر خادعة. لا تحكم على الناس من مظهرهم الخارجي"
         }
     },
     {
@@ -14,6 +20,12 @@ const proverbs = [
             en: "Time will tell.",
             de: "Die Zeit wird es zeigen.",
             ar: "الوقت سيخبرنا"
+        },
+        category: "life",
+        meanings: {
+            en: "The future will reveal the truth. We must be patient to see how things unfold.",
+            de: "Die Zukunft wird die Wahrheit enthüllen. Wir müssen geduldig sein, um zu sehen, wie sich die Dinge entwickeln.",
+            ar: "المستقبل سيكشف الحقيقة. يجب أن نكون صبورين لنرى كيف تتطور الأمور"
         }
     },
     {
@@ -22,6 +34,26 @@ const proverbs = [
             en: "Little by little, the bird builds its nest.",
             de: "Kleinvieh macht auch Mist.",
             ar: "قليلاً قليلاً، يبني الطائر عشه"
+        },
+        category: "success",
+        meanings: {
+            en: "Success comes through steady, consistent effort. Every small step counts towards your goal.",
+            de: "Erfolg kommt durch stetige, konsequente Anstrengung. Jeder kleine Schritt zählt zu deinem Ziel.",
+            ar: "النجاح يأتي من خلال الجهد المستمر والثابت. كل خطوة صغيرة تساهم في تحقيق هدفك"
+        }
+    },
+    {
+        french: "L'amour est aveugle.",
+        translations: {
+            en: "Love is blind.",
+            de: "Die Liebe ist blind.",
+            ar: "الحب أعمى"
+        },
+        category: "love",
+        meanings: {
+            en: "When in love, people often overlook flaws and make irrational decisions.",
+            de: "Wenn man verliebt ist, übersieht man oft Fehler und trifft irrationale Entscheidungen.",
+            ar: "عندما يكون الشخص في حالة حب، فإنه غالباً ما يتغاضى عن العيوب ويتخذ قرارات غير عقلانية"
         }
     },
     {
@@ -941,26 +973,33 @@ const favoritesList = document.getElementById('favorites-list');
 const favoritesContainer = document.querySelector('.favorites-container');
 const notification = document.getElementById('notification');
 const copyButtons = document.querySelectorAll('.copy-btn');
+const searchInput = document.getElementById('search-input');
+const searchBtn = document.getElementById('search-btn');
+const historyBtn = document.getElementById('history-btn');
+const historyContainer = document.querySelector('.history-container');
+const historyList = document.getElementById('history-list');
+const shareModal = document.getElementById('share-modal');
+const shareButtons = document.querySelectorAll('.share-btn');
+const closeModal = document.querySelector('.close-modal');
+const categoryTags = document.querySelectorAll('.category-tag');
 
-// Current language and theme
+// Current state
 let currentLang = 'en';
 let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+let proverbHistory = JSON.parse(localStorage.getItem('proverbHistory')) || [];
 let currentProverb = null;
-
-// Theme handling
-function setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-}
+let currentCategory = 'all';
 
 // Initialize theme
 const savedTheme = localStorage.getItem('theme') || 'light';
-setTheme(savedTheme);
+document.documentElement.setAttribute('data-theme', savedTheme);
 themeSwitch.checked = savedTheme === 'dark';
 
 // Theme switch event listener
 themeSwitch.addEventListener('change', (e) => {
-    setTheme(e.target.checked ? 'dark' : 'light');
+    const theme = e.target.checked ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
 });
 
 // Function to show notification
@@ -999,15 +1038,27 @@ function displayProverb(proverb) {
 
     // Update favorite button state
     updateFavoriteButton(proverb);
+    
+    // Add to history
+    addToHistory(proverb);
+    
+    // Show meaning if available
+    if (proverb.meanings) {
+        showProverbMeaning(proverb);
+    }
 }
 
 // Function to change language
 function changeLanguage(lang) {
     currentLang = lang;
-    const currentProverb = proverbs.find(p => p.french === frenchProverbElement.textContent);
     if (currentProverb) {
         translationElement.textContent = currentProverb.translations[lang];
+        if (currentProverb.meanings) {
+            showProverbMeaning(currentProverb);
+        }
     }
+    updateFavoritesList();
+    updateHistoryDisplay();
 }
 
 // Function to update favorite button state
@@ -1015,6 +1066,24 @@ function updateFavoriteButton(proverb) {
     const isFavorite = favorites.some(fav => fav.french === proverb.french);
     favoriteButton.classList.toggle('active', isFavorite);
     favoriteButton.innerHTML = isFavorite ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>';
+}
+
+// Function to toggle favorite
+function toggleFavorite() {
+    if (!currentProverb) return;
+
+    const index = favorites.findIndex(fav => fav.french === currentProverb.french);
+    if (index === -1) {
+        favorites.push(currentProverb);
+        showNotification('Added to favorites!');
+    } else {
+        favorites.splice(index, 1);
+        showNotification('Removed from favorites!');
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    updateFavoriteButton(currentProverb);
+    updateFavoritesList();
 }
 
 // Function to update favorites list
@@ -1048,18 +1117,13 @@ function updateFavoritesList() {
             const text = e.target.closest('.copy-btn').dataset.copyTranslation;
             navigator.clipboard.writeText(text);
             showNotification('Copied to clipboard!');
-            e.target.closest('.copy-btn').classList.add('copy-success');
-            setTimeout(() => {
-                e.target.closest('.copy-btn').classList.remove('copy-success');
-            }, 300);
         });
     });
 
-    // Fix delete button functionality using event delegation
-    favoritesList.addEventListener('click', (e) => {
-        const removeBtn = e.target.closest('.remove-favorite-btn');
-        if (removeBtn) {
-            const favoriteItem = removeBtn.closest('.favorite-item');
+    // Add event listeners for remove buttons
+    document.querySelectorAll('.favorite-item .remove-favorite-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const favoriteItem = e.target.closest('.favorite-item');
             const proverbText = favoriteItem.dataset.proverb;
             const index = favorites.findIndex(fav => fav.french === proverbText);
             if (index !== -1) {
@@ -1068,132 +1132,12 @@ function updateFavoritesList() {
                 updateFavoritesList();
                 showNotification('Removed from favorites');
             }
-        }
+        });
     });
 }
 
-// Copy button functionality
-copyButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const text = button.dataset.copy === 'french' ? 
-            frenchProverbElement.textContent : 
-            translationElement.textContent;
-        navigator.clipboard.writeText(text);
-        showNotification('Copied to clipboard!');
-        button.classList.add('copy-success');
-        setTimeout(() => {
-            button.classList.remove('copy-success');
-        }, 300);
-    });
-});
-
-// Event Listeners
-newProverbButton.addEventListener('click', () => {
-    filterProverbs();
-});
-
-languageButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        languageButtons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        changeLanguage(button.dataset.lang);
-        updateFavoritesList();
-    });
-});
-
-favoriteButton.addEventListener('click', toggleFavorite);
-
-// Display initial proverb and favorites
-displayProverb(getRandomProverb());
-updateFavoritesList();
-
-// Search functionality
-const searchInput = document.getElementById('search-input');
-const searchBtn = document.getElementById('search-btn');
-
-function searchProverbs(query) {
-    if (!query.trim()) {
-        showNotification('Please enter a search term', 'error');
-        return;
-    }
-
-    query = query.toLowerCase().trim();
-    const results = proverbs.filter(proverb => 
-        proverb.french.toLowerCase().includes(query) ||
-        proverb.translations.en.toLowerCase().includes(query) ||
-        proverb.translations.de.toLowerCase().includes(query) ||
-        proverb.translations.ar.includes(query)
-    );
-    
-    if (results.length > 0) {
-        const randomResult = results[Math.floor(Math.random() * results.length)];
-        displayProverb(randomResult);
-        showNotification(`${results.length} proverb(s) found!`);
-        highlightSearchTerm(query);
-    } else {
-        showNotification('No proverbs found', 'error');
-    }
-}
-
-// Add function to highlight search terms
-function highlightSearchTerm(query) {
-    const frenchText = frenchProverbElement.textContent;
-    const translationText = translationElement.textContent;
-    
-    const highlightedFrench = frenchText.replace(
-        new RegExp(query, 'gi'),
-        match => `<span class="highlight">${match}</span>`
-    );
-    
-    const highlightedTranslation = translationText.replace(
-        new RegExp(query, 'gi'),
-        match => `<span class="highlight">${match}</span>`
-    );
-    
-    frenchProverbElement.innerHTML = highlightedFrench;
-    translationElement.innerHTML = highlightedTranslation;
-}
-
-// Update search event listeners
-searchBtn.addEventListener('click', () => {
-    const query = searchInput.value.trim();
-    if (query) {
-        searchProverbs(query);
-    } else {
-        showNotification('Veuillez entrer un terme de recherche', 'error');
-    }
-});
-
-searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        const query = searchInput.value.trim();
-        if (query) {
-            searchProverbs(query);
-        } else {
-            showNotification('Veuillez entrer un terme de recherche', 'error');
-        }
-    }
-});
-
-// Add clear search functionality
-searchInput.addEventListener('input', () => {
-    if (!searchInput.value.trim()) {
-        // Remove highlights when search is cleared
-        const frenchText = frenchProverbElement.textContent;
-        const translationText = translationElement.textContent;
-        frenchProverbElement.textContent = frenchText;
-        translationElement.textContent = translationText;
-    }
-});
-
-// History functionality
-const historyBtn = document.getElementById('history-btn');
-const historyContainer = document.querySelector('.history-container');
-const historyList = document.getElementById('history-list');
-let proverbHistory = JSON.parse(localStorage.getItem('proverbHistory')) || [];
-
+// Function to add to history
 function addToHistory(proverb) {
-    // Check if proverb already exists in history
     const existingIndex = proverbHistory.findIndex(p => p.french === proverb.french);
     if (existingIndex !== -1) {
         proverbHistory.splice(existingIndex, 1);
@@ -1203,10 +1147,11 @@ function addToHistory(proverb) {
     if (proverbHistory.length > 10) {
         proverbHistory.pop();
     }
-    updateHistoryDisplay();
     localStorage.setItem('proverbHistory', JSON.stringify(proverbHistory));
+    updateHistoryDisplay();
 }
 
+// Function to update history display
 function updateHistoryDisplay() {
     if (proverbHistory.length === 0) {
         historyContainer.classList.remove('active');
@@ -1234,49 +1179,66 @@ function updateHistoryDisplay() {
     });
 }
 
-// Toggle history container
-historyBtn.addEventListener('click', () => {
-    historyContainer.classList.toggle('active');
-    if (historyContainer.classList.contains('active')) {
-        updateHistoryDisplay();
+// Search functionality
+function searchProverbs(query) {
+    if (!query.trim()) {
+        showNotification('Please enter a search term', 'error');
+        return;
     }
-});
 
-// Modify the displayProverb function to include history
-const originalDisplayProverb = displayProverb;
-displayProverb = function(proverb) {
-    originalDisplayProverb(proverb);
-    addToHistory(proverb);
-};
+    query = query.toLowerCase().trim();
+    const results = proverbs.filter(proverb => 
+        proverb.french.toLowerCase().includes(query) ||
+        proverb.translations.en.toLowerCase().includes(query) ||
+        proverb.translations.de.toLowerCase().includes(query) ||
+        proverb.translations.ar.includes(query)
+    );
+    
+    if (results.length > 0) {
+        const randomResult = results[Math.floor(Math.random() * results.length)];
+        displayProverb(randomResult);
+        showNotification(`${results.length} proverb(s) found!`);
+        highlightSearchTerm(query);
+    } else {
+        showNotification('No proverbs found', 'error');
+    }
+}
 
-// Add categories to proverbs
-proverbs.forEach(proverb => {
-    proverb.category = getRandomCategory();
-});
+// Function to highlight search terms
+function highlightSearchTerm(query) {
+    const frenchText = frenchProverbElement.textContent;
+    const translationText = translationElement.textContent;
+    
+    const highlightedFrench = frenchText.replace(
+        new RegExp(query, 'gi'),
+        match => `<span class="highlight">${match}</span>`
+    );
+    
+    const highlightedTranslation = translationText.replace(
+        new RegExp(query, 'gi'),
+        match => `<span class="highlight">${match}</span>`
+    );
+    
+    frenchProverbElement.innerHTML = highlightedFrench;
+    translationElement.innerHTML = highlightedTranslation;
+}
 
-function getRandomCategory() {
-    const categories = ['wisdom', 'life', 'success', 'love'];
-    return categories[Math.floor(Math.random() * categories.length)];
+// Share functionality
+function openShareModal() {
+    shareModal.classList.add('active');
+}
+
+function closeShareModal() {
+    shareModal.classList.remove('active');
 }
 
 // Category functionality
-const categoryTags = document.querySelectorAll('.category-tag');
-let currentCategory = 'all';
-
-categoryTags.forEach(tag => {
-    tag.addEventListener('click', () => {
-        categoryTags.forEach(t => t.classList.remove('active'));
-        tag.classList.add('active');
-        currentCategory = tag.dataset.category;
-        filterProverbs();
-    });
-});
-
-function filterProverbs() {
-    if (currentCategory === 'all') {
+function filterProverbs(category) {
+    currentCategory = category;
+    if (category === 'all') {
         displayProverb(getRandomProverb());
     } else {
-        const filteredProverbs = proverbs.filter(p => p.category === currentCategory);
+        const filteredProverbs = proverbs.filter(p => p.category === category);
         if (filteredProverbs.length > 0) {
             const randomProverb = filteredProverbs[Math.floor(Math.random() * filteredProverbs.length)];
             displayProverb(randomProverb);
@@ -1286,506 +1248,162 @@ function filterProverbs() {
     }
 }
 
-// Share functionality
-const shareModal = document.getElementById('share-modal');
-const shareButtons = document.querySelectorAll('.share-btn');
-const closeModal = document.querySelector('.close-modal');
-
-function openShareModal() {
-    shareModal.classList.add('active');
-}
-
-function closeShareModal() {
-    shareModal.classList.remove('active');
-}
-
-shareButtons.forEach(btn => {
-    btn.addEventListener('click', openShareModal);
-});
-
-closeModal.addEventListener('click', closeShareModal);
-
-shareModal.addEventListener('click', (e) => {
-    if (e.target === shareModal) {
-        closeShareModal();
+// Function to show proverb meaning
+function showProverbMeaning(proverb) {
+    if (!proverb.meanings) return;
+    
+    const meaningContainer = document.createElement('div');
+    meaningContainer.className = 'proverb-meaning';
+    meaningContainer.innerHTML = `
+        <h4><i class="fas fa-lightbulb"></i> Meaning</h4>
+        <p>${proverb.meanings[currentLang]}</p>
+    `;
+    
+    const existingMeaning = document.querySelector('.proverb-meaning');
+    if (existingMeaning) {
+        existingMeaning.remove();
     }
-});
-
-// Share options
-const shareOptions = document.querySelectorAll('.share-option');
-shareOptions.forEach(option => {
-    option.addEventListener('click', () => {
-        if (!currentProverb) return;
-        
-        const platform = option.dataset.platform;
-        const text = `${currentProverb.french}\n\n${currentProverb.translations[currentLang]}`;
-        let url = '';
-        
-        switch (platform) {
-            case 'twitter':
-                url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-                break;
-            case 'facebook':
-                url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`;
-                break;
-            case 'whatsapp':
-                url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-                break;
-            case 'telegram':
-                url = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
-                break;
-        }
-        
-        window.open(url, '_blank');
-        closeShareModal();
-        showNotification('Sharing...');
-    });
-});
-
-// Audio functionality
-const audioButtons = document.querySelectorAll('.audio-btn');
-
-audioButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        if (!currentProverb) return;
-        
-        const text = btn.closest('.proverb-french') ? 
-            currentProverb.french : 
-            currentProverb.translations[currentLang];
-        
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = btn.closest('.proverb-french') ? 'fr-FR' : 
-                currentLang === 'en' ? 'en-US' : 
-                currentLang === 'de' ? 'de-DE' : 'ar-SA';
-            
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-            
-            const voices = window.speechSynthesis.getVoices();
-            const preferredVoice = voices.find(voice => 
-                voice.lang === utterance.lang
-            );
-            if (preferredVoice) {
-                utterance.voice = preferredVoice;
-            }
-            
-            window.speechSynthesis.speak(utterance);
-            showNotification('Playing audio...');
-        } else {
-            showNotification('Speech synthesis is not supported in your browser', 'error');
-        }
-    });
-});
-
-// Add voice loading for Chrome
-if ('speechSynthesis' in window) {
-    // Chrome loads voices asynchronously
-    window.speechSynthesis.onvoiceschanged = () => {
-        const voices = window.speechSynthesis.getVoices();
-        console.log('Voices loaded:', voices.length);
-    };
+    
+    document.querySelector('.proverb-card').appendChild(meaningContainer);
 }
 
-// Function to toggle favorite
-function toggleFavorite() {
-    if (!currentProverb) return;
-
-    const index = favorites.findIndex(fav => fav.french === currentProverb.french);
-    if (index === -1) {
-        favorites.push(currentProverb);
-        showNotification('Added to favorites!');
-    } else {
-        favorites.splice(index, 1);
-        showNotification('Removed from favorites!');
-    }
-
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-    updateFavoriteButton(currentProverb);
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize with a random proverb
+    displayProverb(getRandomProverb());
     updateFavoritesList();
-}
+    updateHistoryDisplay();
 
-// Initialize daily and weekly proverb features
-function initializeProverbButtons() {
-    const actionsContainer = document.querySelector('.proverb-actions');
-    
-    // Create daily proverb button
-    const dailyBtn = document.createElement('button');
-    dailyBtn.id = 'daily-proverb';
-    dailyBtn.className = 'action-btn';
-    dailyBtn.innerHTML = '<i class="fas fa-calendar-day"></i>';
-    dailyBtn.title = 'Proverb of the Day';
-    actionsContainer.appendChild(dailyBtn);
-
-    // Create weekly proverb button
-    const weeklyBtn = document.createElement('button');
-    weeklyBtn.id = 'week-proverb';
-    weeklyBtn.className = 'action-btn';
-    weeklyBtn.innerHTML = '<i class="fas fa-calendar-week"></i>';
-    weeklyBtn.title = 'Proverb of the Week';
-    actionsContainer.appendChild(weeklyBtn);
-
-    // Add event listeners
-    dailyBtn.addEventListener('click', () => {
-        const proverb = getDailyProverb();
-        displayProverb(proverb);
-        showNotification('Daily proverb loaded!');
+    // New proverb button
+    newProverbButton.addEventListener('click', () => {
+        filterProverbs(currentCategory);
     });
 
-    weeklyBtn.addEventListener('click', () => {
-        const proverb = getProverbOfTheWeek();
-        displayProverb(proverb);
-        showNotification('Weekly proverb loaded!');
-    });
-}
-
-// Get daily proverb
-function getDailyProverb() {
-    const today = new Date().toDateString();
-    const stored = localStorage.getItem('dailyProverb');
-    const storedDate = localStorage.getItem('dailyProverbDate');
-
-    if (stored && storedDate === today) {
-        return JSON.parse(stored);
-    }
-
-    const randomProverb = proverbs[Math.floor(Math.random() * proverbs.length)];
-    localStorage.setItem('dailyProverb', JSON.stringify(randomProverb));
-    localStorage.setItem('dailyProverbDate', today);
-    return randomProverb;
-}
-
-// Get weekly proverb
-function getProverbOfTheWeek() {
-    const now = new Date();
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).toDateString();
-    const stored = localStorage.getItem('weeklyProverb');
-    const storedDate = localStorage.getItem('weeklyProverbDate');
-
-    if (stored && storedDate === startOfWeek) {
-        return JSON.parse(stored);
-    }
-
-    const randomProverb = proverbs[Math.floor(Math.random() * proverbs.length)];
-    localStorage.setItem('weeklyProverb', JSON.stringify(randomProverb));
-    localStorage.setItem('weeklyProverbDate', startOfWeek);
-    return randomProverb;
-}
-
-// Initialize features when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    initializeProverbButtons();
-    // ... other initialization code ...
-});
-
-// Quiz feature
-let quizActive = false;
-let currentQuizProverb = null;
-let quizScore = 0;
-let quizAttempts = 0;
-
-function startQuiz() {
-    quizActive = true;
-    quizScore = 0;
-    quizAttempts = 0;
-    showNextQuizQuestion();
-}
-
-function showNextQuizQuestion() {
-    if (!quizActive) return;
-
-    // Select a random proverb
-    currentQuizProverb = proverbs[Math.floor(Math.random() * proverbs.length)];
-    
-    // Generate options (3 incorrect + 1 correct)
-    const options = [currentQuizProverb.french];
-    while (options.length < 4) {
-        const randomProverb = proverbs[Math.floor(Math.random() * proverbs.length)];
-        if (!options.includes(randomProverb.french)) {
-            options.push(randomProverb.french);
-        }
-    }
-    
-    // Shuffle options
-    options.sort(() => Math.random() - 0.5);
-
-    // Create quiz modal
-    const modal = document.createElement('div');
-    modal.className = 'quiz-modal';
-    modal.innerHTML = `
-        <div class="quiz-content">
-            <h3>Quiz Question ${quizAttempts + 1}/5</h3>
-            <p class="quiz-proverb">${currentQuizProverb.en}</p>
-            <div class="quiz-options">
-                ${options.map(option => `
-                    <button class="quiz-option">${option}</button>
-                `).join('')}
-            </div>
-            <p class="quiz-score">Score: ${quizScore}/${quizAttempts}</p>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Add event listeners to options
-    const optionButtons = modal.querySelectorAll('.quiz-option');
-    optionButtons.forEach(button => {
+    // Language buttons
+    languageButtons.forEach(button => {
         button.addEventListener('click', () => {
-            const selectedOption = button.textContent;
-            if (selectedOption === currentQuizProverb.french) {
-                quizScore++;
-                showNotification('Correct!', 'success');
+            languageButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            changeLanguage(button.dataset.lang);
+        });
+    });
+
+    // Favorite button
+    favoriteButton.addEventListener('click', toggleFavorite);
+
+    // History button
+    historyBtn.addEventListener('click', () => {
+        historyContainer.classList.toggle('active');
+        if (historyContainer.classList.contains('active')) {
+            updateHistoryDisplay();
+        }
+    });
+
+    // Search functionality
+    searchBtn.addEventListener('click', () => {
+        const query = searchInput.value.trim();
+        if (query) {
+            searchProverbs(query);
+        } else {
+            showNotification('Please enter a search term', 'error');
+        }
+    });
+
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const query = searchInput.value.trim();
+            if (query) {
+                searchProverbs(query);
             } else {
-                showNotification('Incorrect!', 'error');
+                showNotification('Please enter a search term', 'error');
+            }
+        }
+    });
+
+    // Category tags
+    categoryTags.forEach(tag => {
+        tag.addEventListener('click', () => {
+            categoryTags.forEach(t => t.classList.remove('active'));
+            tag.classList.add('active');
+            filterProverbs(tag.dataset.category);
+        });
+    });
+
+    // Share modal
+    shareButtons.forEach(btn => {
+        btn.addEventListener('click', openShareModal);
+    });
+
+    closeModal.addEventListener('click', closeShareModal);
+    shareModal.addEventListener('click', (e) => {
+        if (e.target === shareModal) {
+            closeShareModal();
+        }
+    });
+
+    // Share options
+    document.querySelectorAll('.share-option').forEach(option => {
+        option.addEventListener('click', () => {
+            if (!currentProverb) return;
+            
+            const platform = option.dataset.platform;
+            const text = `${currentProverb.french}\n\n${currentProverb.translations[currentLang]}`;
+            let url = '';
+            
+            switch (platform) {
+                case 'twitter':
+                    url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                    break;
+                case 'facebook':
+                    url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`;
+                    break;
+                case 'whatsapp':
+                    url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                    break;
+                case 'telegram':
+                    url = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
+                    break;
             }
             
-            quizAttempts++;
-            modal.remove();
+            window.open(url, '_blank');
+            closeShareModal();
+            showNotification('Sharing...');
+        });
+    });
 
-            if (quizAttempts < 5) {
-                showNextQuizQuestion();
+    // Copy buttons
+    copyButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const text = button.dataset.copy === 'french' ? 
+                frenchProverbElement.textContent : 
+                translationElement.textContent;
+            navigator.clipboard.writeText(text);
+            showNotification('Copied to clipboard!');
+        });
+    });
+
+    // Audio buttons
+    document.querySelectorAll('.audio-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!currentProverb) return;
+            
+            const text = btn.closest('.proverb-french') ? 
+                currentProverb.french : 
+                currentProverb.translations[currentLang];
+            
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = btn.closest('.proverb-french') ? 'fr-FR' : 
+                    currentLang === 'en' ? 'en-US' : 
+                    currentLang === 'de' ? 'de-DE' : 'ar-SA';
+                
+                window.speechSynthesis.speak(utterance);
+                showNotification('Playing audio...');
             } else {
-                endQuiz();
+                showNotification('Speech synthesis is not supported in your browser', 'error');
             }
         });
     });
-}
-
-function endQuiz() {
-    quizActive = false;
-    const percentage = (quizScore / 5) * 100;
-    showNotification(`Quiz completed! Your score: ${percentage}%`, 'success');
-}
-
-// Initialize quiz button
-function initializeQuizButton() {
-    const actionsContainer = document.querySelector('.proverb-actions');
-    
-    const quizBtn = document.createElement('button');
-    quizBtn.id = 'quiz-btn';
-    quizBtn.className = 'action-btn';
-    quizBtn.innerHTML = '<i class="fas fa-question-circle"></i>';
-    quizBtn.title = 'Start Quiz';
-    actionsContainer.appendChild(quizBtn);
-
-    quizBtn.addEventListener('click', startQuiz);
-}
-
-// Add quiz initialization to DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    initializeQuizButton();
-    // ... other initialization code ...
-});
-
-// Export to PDF Feature
-function exportFavoritesToPDF() {
-    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    if (favorites.length === 0) {
-        showNotification('No favorites to export!');
-        return;
-    }
-
-    // Initialize jsPDF
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    let y = 20;
-    const lineHeight = 10;
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.width;
-
-    // Add title
-    doc.setFontSize(20);
-    doc.text('My Favorite Proverbs', pageWidth / 2, y, { align: 'center' });
-    y += lineHeight * 2;
-
-    // Add proverbs
-    doc.setFontSize(12);
-    favorites.forEach((proverb, index) => {
-        // Check if we need a new page
-        if (y > doc.internal.pageSize.height - margin) {
-            doc.addPage();
-            y = margin;
-        }
-
-        // Add French proverb
-        doc.setFont(undefined, 'bold');
-        doc.text(`${index + 1}. ${proverb.french}`, margin, y);
-        y += lineHeight;
-
-        // Add translation
-        doc.setFont(undefined, 'normal');
-        doc.text(`   ${proverb.translations[currentLang]}`, margin, y);
-        y += lineHeight * 1.5;
-    });
-
-    // Save the PDF
-    doc.save('favorite-proverbs.pdf');
-    showNotification('Favorites exported to PDF!');
-}
-
-// Initialize export button
-function initializeExportButton() {
-    const favoritesContainer = document.querySelector('.favorites-container');
-    
-    const exportBtn = document.createElement('button');
-    exportBtn.id = 'export-btn';
-    exportBtn.className = 'action-btn';
-    exportBtn.innerHTML = '<i class="fas fa-file-pdf"></i>';
-    exportBtn.title = 'Export to PDF';
-    
-    favoritesContainer.appendChild(exportBtn);
-    
-    exportBtn.addEventListener('click', exportFavoritesToPDF);
-}
-
-// Add export button initialization to DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    initializeExportButton();
-    // ... other initialization code ...
-});
-
-// Proverb of the Day Widget
-function createProverbOfTheDayWidget() {
-    const widget = document.createElement('div');
-    widget.className = 'proverb-widget';
-    widget.innerHTML = `
-        <div class="widget-header">
-            <h3><i class="fas fa-star"></i> Proverb of the Day</h3>
-            <div class="countdown">Next proverb in: <span id="countdown-timer">24:00:00</span></div>
-        </div>
-        <div class="widget-content">
-            <p class="widget-proverb"></p>
-            <p class="widget-translation"></p>
-        </div>
-        <div class="widget-footer">
-            <button class="widget-action-btn" id="share-widget">
-                <i class="fas fa-share-alt"></i>
-            </button>
-            <button class="widget-action-btn" id="favorite-widget">
-                <i class="far fa-heart"></i>
-            </button>
-        </div>
-    `;
-
-    document.querySelector('.container').insertBefore(widget, document.querySelector('main'));
-
-    // Initialize widget content
-    updateWidgetContent();
-    startCountdown();
-
-    // Add event listeners
-    document.getElementById('share-widget').addEventListener('click', () => {
-        const proverb = getDailyProverb();
-        shareProverb(proverb);
-    });
-
-    document.getElementById('favorite-widget').addEventListener('click', () => {
-        const proverb = getDailyProverb();
-        toggleFavorite(proverb);
-        updateWidgetFavoriteButton();
-    });
-}
-
-function updateWidgetContent() {
-    const proverb = getDailyProverb();
-    const widget = document.querySelector('.proverb-widget');
-    
-    widget.querySelector('.widget-proverb').textContent = proverb.french;
-    widget.querySelector('.widget-translation').textContent = proverb.translations[currentLang];
-    
-    // Add animation
-    widget.classList.add('widget-update');
-    setTimeout(() => widget.classList.remove('widget-update'), 1000);
-}
-
-function startCountdown() {
-    function updateCountdown() {
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-        
-        const diff = tomorrow - now;
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        document.getElementById('countdown-timer').textContent = 
-            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-}
-
-function updateWidgetFavoriteButton() {
-    const proverb = getDailyProverb();
-    const favoriteBtn = document.getElementById('favorite-widget');
-    const isFavorite = favorites.some(fav => fav.french === proverb.french);
-    
-    favoriteBtn.innerHTML = isFavorite ? 
-        '<i class="fas fa-heart"></i>' : 
-        '<i class="far fa-heart"></i>';
-}
-
-// Add widget initialization to DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    createProverbOfTheDayWidget();
-    // ... other initialization code ...
-});
-
-// Proverb Categories Feature
-function createCategoryCards() {
-    const categories = [
-        { id: 'wisdom', icon: 'brain', title: 'Wisdom', color: '#4CAF50' },
-        { id: 'life', icon: 'heart', title: 'Life', color: '#2196F3' },
-        { id: 'success', icon: 'trophy', title: 'Success', color: '#FFC107' },
-        { id: 'love', icon: 'heart', title: 'Love', color: '#E91E63' }
-    ];
-
-    const categorySection = document.createElement('div');
-    categorySection.className = 'category-cards';
-    
-    categories.forEach(category => {
-        const card = document.createElement('div');
-        card.className = 'category-card';
-        card.style.setProperty('--card-color', category.color);
-        card.innerHTML = `
-            <div class="card-icon">
-                <i class="fas fa-${category.icon}"></i>
-            </div>
-            <h3>${category.title}</h3>
-            <p class="proverb-count">${getCategoryCount(category.id)} proverbs</p>
-            <button class="explore-btn" data-category="${category.id}">
-                Explore <i class="fas fa-arrow-right"></i>
-            </button>
-        `;
-        
-        categorySection.appendChild(card);
-    });
-
-    document.querySelector('.container').insertBefore(categorySection, document.querySelector('main'));
-
-    // Add event listeners
-    categorySection.querySelectorAll('.explore-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const category = btn.dataset.category;
-            filterProverbs(category);
-            showNotification(`Showing ${category} proverbs`);
-        });
-    });
-}
-
-function getCategoryCount(category) {
-    return proverbs.filter(p => p.category === category).length;
-}
-
-// Add category cards initialization to DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    createCategoryCards();
-    // ... other initialization code ...
 }); 
