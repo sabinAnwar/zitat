@@ -1,119 +1,248 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>French Proverbs</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Theme Switch -->
     <div class="theme-switch-wrapper">
         <i class="fas fa-sun icon"></i>
-        <label class="theme-switch" for="checkbox">
-            <input type="checkbox" id="checkbox" />
-            <div class="slider round"></div>
+        <label class="theme-switch">
+            <input type="checkbox" id="checkbox">
+            <div class="slider"></div>
         </label>
         <i class="fas fa-moon icon"></i>
     </div>
 
     <div class="container">
-        <header>
-            <h1>French Proverbs</h1>
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search for a proverb...">
-                <button id="search-btn"><i class="fas fa-search"></i></button>
+        <!-- Navigation Menu -->
+        <nav class="main-nav">
+            <div class="nav-section">
+                <h3>Categories</h3>
+                <ul>
+                    <li><a href="#" data-category="wisdom">Wisdom Proverbs</a></li>
+                    <li><a href="#" data-category="life">Life Proverbs</a></li>
+                    <li><a href="#" data-category="success">Success Proverbs</a></li>
+                    <li><a href="#" data-category="love">Love Proverbs</a></li>
+                </ul>
             </div>
-            <div class="category-tags">
-                <button class="category-tag active" data-category="all">All</button>
-                <button class="category-tag" data-category="wisdom">Wisdom</button>
-                <button class="category-tag" data-category="life">Life</button>
-                <button class="category-tag" data-category="success">Success</button>
-                <button class="category-tag" data-category="love">Love</button>
+            
+            <div class="nav-section">
+                <h3>Languages</h3>
+                <ul>
+                    <li><a href="#" data-lang="en">English</a></li>
+                    <li><a href="#" data-lang="de">German</a></li>
+                    <li><a href="#" data-lang="ar">Arabic</a></li>
+                </ul>
             </div>
-            <div class="language-selector">
-                <button class="lang-btn active" data-lang="en">English</button>
-                <button class="lang-btn" data-lang="de">Deutsch</button>
-                <button class="lang-btn" data-lang="ar">العربية</button>
+            
+            <div class="nav-section">
+                <h3>Collections</h3>
+                <ul>
+                    <li><a href="#" id="favorites-nav">Favorites</a></li>
+                    <li><a href="#" id="history-nav">History</a></li>
+                    <li><a href="#" id="daily-nav">Daily Proverbs</a></li>
+                </ul>
             </div>
-        </header>
-        
-        <main>
-            <div class="proverb-card">
-                <div class="proverb-french">
-                    <h2>French Proverb</h2>
-                    <p id="french-proverb"></p>
-                    <div class="proverb-actions">
-                        <button class="action-btn copy-btn" data-copy="french" title="Copy">
-                            <i class="fas fa-copy"></i>
+            
+            <div class="nav-section">
+                <h3>Tools</h3>
+                <ul>
+                    <li><a href="#" id="search-nav">Search</a></li>
+                    <li><a href="#" id="quiz-nav">Proverb Quiz</a></li>
+                    <li><a href="#" id="export-nav">Export Proverbs</a></li>
+                </ul>
+            </div>
+            
+            <div class="nav-section">
+                <h3>Learn</h3>
+                <ul>
+                    <li><a href="#" id="grammar-nav">Grammar Tips</a></li>
+                    <li><a href="#" id="pronunciation-nav">Pronunciation Guide</a></li>
+                    <li><a href="#" id="culture-nav">Cultural Context</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <header>
+                <h1>French Proverbs</h1>
+                <div class="search-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search proverbs...">
+                    <button id="search-btn" class="action-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main>
+                <div class="main-content">
+                    <!-- Category Tags -->
+                    <div class="category-tags">
+                        <!-- ... existing category tags ... -->
+                    </div>
+
+                    <!-- Language Selector -->
+                    <div class="language-selector">
+                        <button class="lang-btn active" data-lang="en">English</button>
+                        <button class="lang-btn" data-lang="de">German</button>
+                        <button class="lang-btn" data-lang="ar">Arabic</button>
+                    </div>
+
+                    <!-- Proverb Categories -->
+                    <div class="proverb-categories">
+                        <div class="category-card category-wisdom" data-category="wisdom">
+                            <div class="category-content">
+                                <h4>Wisdom</h4>
+                                <div class="count">12 Proverbs</div>
+                                <div class="category-description">Ancient wisdom and timeless knowledge</div>
+                            </div>
+                        </div>
+                        <div class="category-card category-life" data-category="life">
+                            <div class="category-content">
+                                <h4>Life</h4>
+                                <div class="count">15 Proverbs</div>
+                                <div class="category-description">Life lessons and daily wisdom</div>
+                            </div>
+                        </div>
+                        <div class="category-card category-success" data-category="success">
+                            <div class="category-content">
+                                <h4>Success</h4>
+                                <div class="count">10 Proverbs</div>
+                                <div class="category-description">Paths to achievement and growth</div>
+                            </div>
+                        </div>
+                        <div class="category-card category-love" data-category="love">
+                            <div class="category-content">
+                                <h4>Love</h4>
+                                <div class="count">8 Proverbs</div>
+                                <div class="category-description">Love, relationships, and emotions</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proverb Display -->
+                    <div class="proverb-card">
+                        <div class="proverb-french">
+                            <h2>French</h2>
+                            <p id="french-proverb"></p>
+                            <div class="proverb-actions">
+                                <button class="action-btn copy-btn" data-copy="french" title="Copy">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button class="action-btn audio-btn" title="Listen">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="proverb-translation">
+                            <h2>Translation</h2>
+                            <p id="translation"></p>
+                            <div class="proverb-actions">
+                                <button class="action-btn copy-btn" data-copy="translation" title="Copy">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button class="action-btn audio-btn" title="Listen">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="controls">
+                        <button id="new-proverb" class="new-proverb-btn">
+                            <i class="fas fa-random"></i>
+                            New Proverb
                         </button>
-                        <button class="action-btn share-btn" title="Share">
-                            <i class="fas fa-share-alt"></i>
+                        <button id="favorite-btn" class="favorite-btn" title="Add to Favorites">
+                            <i class="far fa-heart"></i>
                         </button>
-                        <button class="action-btn audio-btn" title="Listen">
-                            <i class="fas fa-volume-up"></i>
+                        <button id="history-btn" class="history-btn" title="View History">
+                            <i class="fas fa-history"></i>
                         </button>
                     </div>
                 </div>
-                <div class="proverb-translation">
-                    <h2>Translation</h2>
-                    <p id="translation"></p>
-                    <div class="proverb-actions">
-                        <button class="action-btn copy-btn" data-copy="translation" title="Copy">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="action-btn share-btn" title="Share">
-                            <i class="fas fa-share-alt"></i>
-                        </button>
-                        <button class="action-btn audio-btn" title="Listen">
-                            <i class="fas fa-volume-up"></i>
-                        </button>
+
+                <!-- Side Panel -->
+                <div class="side-panel">
+                    <!-- Favorites Container -->
+                    <div class="favorites-container">
+                        <h3>Favorites</h3>
+                        <div id="favorites-list" class="favorites-list"></div>
+                    </div>
+
+                    <!-- History Container -->
+                    <div class="history-container">
+                        <h3>History</h3>
+                        <div id="history-list" class="history-list"></div>
+                    </div>
+
+                    <!-- Quiz Container -->
+                    <div class="quiz-container">
+                        <h3>Proverb Quiz</h3>
+                        <div id="quiz-content"></div>
+                    </div>
+
+                    <!-- Grammar Container -->
+                    <div class="grammar-container">
+                        <h3>Grammar Tips</h3>
+                        <div id="grammar-content"></div>
+                    </div>
+
+                    <!-- Pronunciation Container -->
+                    <div class="pronunciation-container">
+                        <h3>Pronunciation Guide</h3>
+                        <div id="pronunciation-content"></div>
+                    </div>
+
+                    <!-- Cultural Container -->
+                    <div class="cultural-container">
+                        <h3>Cultural Context</h3>
+                        <div id="cultural-content"></div>
                     </div>
                 </div>
-            </div>
-            <div class="controls">
-                <button id="new-proverb" class="new-proverb-btn">
-                    <i class="fas fa-random"></i> New Proverb
-                </button>
-                <button id="favorite-btn" class="favorite-btn" title="Add to favorites">
-                    <i class="far fa-heart"></i>
-                </button>
-                <button id="history-btn" class="history-btn" title="History">
-                    <i class="fas fa-history"></i>
-                </button>
-            </div>
-            <div class="favorites-container">
-                <h3>Favorites</h3>
-                <div id="favorites-list" class="favorites-list"></div>
-            </div>
-            <div class="history-container">
-                <h3>History</h3>
-                <div id="history-list" class="history-list"></div>
-            </div>
-        </main>
-    </div>
-    <div class="notification" id="notification"></div>
-    <div class="share-modal" id="share-modal">
-        <div class="share-content">
-            <h3>Share</h3>
-            <div class="share-options">
-                <button class="share-option" data-platform="twitter">
-                    <i class="fab fa-twitter"></i>
-                </button>
-                <button class="share-option" data-platform="facebook">
-                    <i class="fab fa-facebook"></i>
-                </button>
-                <button class="share-option" data-platform="whatsapp">
-                    <i class="fab fa-whatsapp"></i>
-                </button>
-                <button class="share-option" data-platform="telegram">
-                    <i class="fab fa-telegram"></i>
-                </button>
-            </div>
-            <button class="close-modal">×</button>
+            </main>
         </div>
     </div>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="share-modal">
+        <div class="share-content">
+            <button class="close-modal">&times;</button>
+            <h3>Share Proverb</h3>
+            <div class="share-options">
+                <a href="#" class="share-option" data-platform="twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="share-option" data-platform="facebook">
+                    <i class="fab fa-facebook"></i>
+                </a>
+                <a href="#" class="share-option" data-platform="whatsapp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                <a href="#" class="share-option" data-platform="telegram">
+                    <i class="fab fa-telegram"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
     <script src="script.js"></script>
 </body>
 </html> 
